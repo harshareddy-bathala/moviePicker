@@ -26,14 +26,14 @@ A smart, user-friendly web app that recommends movies based on your preferred ge
 ## 🚀 Quick Start
 
 ### Option 1: Use Without API (Instant)
-1. Open `main.html` in your browser
+1. Open `index.html` in your browser
 2. Enter a genre (e.g., "sci-fi", "comedy", "action")
 3. Click "Pick a Movie" or press Enter
 4. Get instant recommendations from our curated database!
 
 ### Option 2: Add AI Power (Recommended)
 1. Get a free Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey)
-2. Open `main.html` in your browser
+2. Open `index.html` in your browser
 3. Click the ⚙️ settings icon (top-right)
 4. Paste your API key and click "Save"
 5. Enjoy AI-powered movie recommendations!
@@ -50,8 +50,6 @@ Deploy your Movie Picker to the web in minutes!
 5. Click "Deploy site" (no configuration needed!)
 
 **Your site will be live at:** `https://your-site-name.netlify.app`
-
-For detailed deployment instructions including GitHub Pages and Vercel, see [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
 
 ## 📖 Supported Genres
 
