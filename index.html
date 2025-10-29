@@ -87,7 +87,15 @@
 
         <!-- History Section -->
         <div id="history-section" class="hidden">
-            <h3 class="text-sm font-semibold text-gray-400 mb-2">Recent Picks</h3>
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-sm font-semibold text-gray-400">Recent Picks</h3>
+                <button id="clearHistoryBtn" class="text-xs text-red-400 hover:text-red-300 transition" title="Clear History">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Clear
+                </button>
+            </div>
             <div id="history-list" class="text-sm text-left space-y-1 max-h-32 overflow-y-auto"></div>
         </div>
     </div>
@@ -217,6 +225,7 @@
         const saveSettings = document.getElementById('saveSettings');
         const apiKeyInput = document.getElementById('apiKeyInput');
         const useLocalFallback = document.getElementById('useLocalFallback');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
         // State management
         let apiKey = localStorage.getItem('geminiApiKey') || '';
@@ -239,6 +248,7 @@
         settingsBtn.addEventListener('click', () => settingsModal.classList.add('active'));
         closeSettings.addEventListener('click', () => settingsModal.classList.remove('active'));
         saveSettings.addEventListener('click', saveSettingsHandler);
+        clearHistoryBtn.addEventListener('click', clearHistory);
         settingsModal.addEventListener('click', (e) => {
             if (e.target === settingsModal) settingsModal.classList.remove('active');
         });
@@ -319,6 +329,15 @@
             historyList.innerHTML = history.map(entry => 
                 `<div class="text-gray-400 p-2 bg-gray-800 rounded"><span class="text-blue-400">${entry.genre}:</span> ${entry.movie}</div>`
             ).join('');
+        }
+
+        function clearHistory() {
+            if (confirm('Are you sure you want to clear all history?')) {
+                history = [];
+                localStorage.setItem('movieHistory', JSON.stringify(history));
+                historySection.classList.add('hidden');
+                showNotification('History cleared!');
+            }
         }
 
         async function getMovieRecommendation() {
