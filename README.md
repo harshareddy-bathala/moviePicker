@@ -38,6 +38,21 @@ A smart, user-friendly web app that recommends movies based on your preferred ge
 4. Paste your API key and click "Save"
 5. Enjoy AI-powered movie recommendations!
 
+## 🌐 Deployment
+
+Deploy your Movie Picker to the web in minutes!
+
+### Recommended: Netlify (Easiest)
+1. Go to [Netlify](https://www.netlify.com)
+2. Sign up with GitHub
+3. Click "Add new site" → "Import an existing project"
+4. Select this repository
+5. Click "Deploy site" (no configuration needed!)
+
+**Your site will be live at:** `https://your-site-name.netlify.app`
+
+For detailed deployment instructions including GitHub Pages and Vercel, see [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
+
 ## 📖 Supported Genres
 
 The local database includes movies from these genres:
