@@ -168,6 +168,34 @@
             ]
         };
 
+        // Genre aliases and variations for flexible matching
+        const genreAliases = {
+            'scifi': 'sci-fi',
+            'science fiction': 'sci-fi',
+            'sciencefiction': 'sci-fi',
+            'sf': 'sci-fi',
+            'funny': 'comedy',
+            'comedies': 'comedy',
+            'humour': 'comedy',
+            'humor': 'comedy',
+            'actions': 'action',
+            'dramas': 'drama',
+            'scary': 'horror',
+            'horrors': 'horror',
+            'thrillers': 'thriller',
+            'suspense': 'thriller',
+            'romantic': 'romance',
+            'romances': 'romance',
+            'love': 'romance',
+            'fantasies': 'fantasy',
+            'animations': 'animation',
+            'animated': 'animation',
+            'cartoon': 'animation',
+            'cartoons': 'animation',
+            'mysteries': 'mystery',
+            'detective': 'mystery'
+        };
+
         // DOM elements
         const pickButton = document.getElementById('pickButton');
         const genreInput = document.getElementById('genreInput');
@@ -243,14 +271,18 @@
 
         function getLocalMovie(genre) {
             const normalizedGenre = genre.toLowerCase().trim();
-            const movies = movieDatabase[normalizedGenre];
             
+            // First, check if there's an alias for this genre
+            const mappedGenre = genreAliases[normalizedGenre] || normalizedGenre;
+            
+            // Try exact match with mapped genre
+            const movies = movieDatabase[mappedGenre];
             if (movies && movies.length > 0) {
                 const randomIndex = Math.floor(Math.random() * movies.length);
                 return movies[randomIndex];
             }
             
-            // If exact genre not found, try partial match
+            // If exact match not found, try partial match
             for (const [key, value] of Object.entries(movieDatabase)) {
                 if (key.includes(normalizedGenre) || normalizedGenre.includes(key)) {
                     const randomIndex = Math.floor(Math.random() * value.length);
@@ -399,8 +431,3 @@
 
 </body>
 </html>
-1. Open: https://www.netlify.com
-2. Sign up with GitHub
-3. Import "moviePicker" repo
-4. Click "Deploy"
-5. Share your URL! 🎉
