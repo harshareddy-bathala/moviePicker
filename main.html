@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Picker</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Simple loading spinner */
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md text-center">
+        <h1 class="text-3xl font-bold mb-6 text-blue-400">Movie Picker</h1>
+        <p class="text-gray-300 mb-6">What kind of movie do you want to watch?</p>
+
+        <!-- Input Section -->
+        <div class="flex flex-col sm:flex-row gap-4 mb-6">
+            <input type="text" id="genreInput" placeholder="Enter a genre (e.g., Sci-Fi, Comedy)" class="flex-grow p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button id="pickButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg transition duration-200">
+                Pick a Movie
+            </button>
+        </div>
+
+        <!-- Result Section -->
+        <div id="result-container" class="bg-gray-700 p-6 rounded-lg min-h-[100px] flex items-center justify-center">
+            <span id="result-text" class="text-gray-400">Your recommendation will appear here...</span>
+        </div>
+    </div>
+
+    <script>
+        const pickButton = document.getElementById('pickButton');
+        const genreInput = document.getElementById('genreInput');
+        const resultText = document.getElementById('result-text');
+
+        pickButton.addEventListener('click', getMovieRecommendation);
+        genreInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                getMovieRecommendation();
+            }
+        });
+
+        async function getMovieRecommendation() {
+            const genre = genreInput.value.trim();
+            if (!genre) {
+                resultText.textContent = "Please enter a genre first!";
+                resultText.classList.add('text-yellow-400');
+                return;
+            }
+
+            // --- Show Loading State ---
+            resultText.innerHTML = '<div class="loader"></div>';
+            resultText.classList.remove('text-yellow-400', 'text-red-400', 'text-gray-400', 'text-xl', 'font-bold');
+            pickButton.disabled = true;
+            pickButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // --- Gemini API Call ---
+            const systemPrompt = "Act as a movie buff. Based on the user's preferred genre, pick *one* great movie. Just return the movie title and its release year in the format: Movie Title (Year). For example: The Matrix (1999). Do not add any other text or markdown.";
+            const userQuery = `Genre: ${genre}`;
+            const apiKey = ""; // Leave empty, handled by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }], // Use Google Search for grounded, real-time results
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            try {
+                // Implement exponential backoff for retries
+                let response;
+                let delay = 1000; // Start with 1 second
+                for (let i = 0; i < 3; i++) { // Try up to 3 times
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.status === 429 || response.status >= 500) {
+                        // If rate limited or server error, wait and retry
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2; // Double the delay
+                    } else if (response.ok) {
+                        break; // Success, exit loop
+                    } else {
+                        // Other client-side error, don't retry
+                        throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+                    }
+                }
+                
+                if (!response || !response.ok) {
+                   throw new Error(`API request failed after retries or with a non-retriable error.`);
+                }
+
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const movie = candidate.content.parts[0].text;
+                    resultText.textContent = movie;
+                    resultText.classList.add('text-xl', 'font-bold', 'text-white');
+                } else {
+                    throw new Error("No valid movie recommendation found in the response.");
+                }
+
+            } catch (error) {
+                console.error("Error fetching movie recommendation:", error);
+                resultText.textContent = "Sorry, I couldn't pick a movie. Please try again.";
+                resultText.classList.add('text-red-400');
+            } finally {
+                // --- Reset Button State ---
+                pickButton.disabled = false;
+                pickButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+    </script>
+
+</body>
+</html>
