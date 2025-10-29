@@ -9,8 +9,8 @@
     <style>
         /* Simple loading spinner */
         .loader {
-            border: 4px solid #f3f3f3; /* Light grey */
-            border-top: 4px solid #3498db; /* Blue */
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -21,116 +21,379 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Smooth transitions */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Settings modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white font-sans flex items-center justify-center min-h-screen p-4">
 
-    <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md text-center">
-        <h1 class="text-3xl font-bold mb-6 text-blue-400">Movie Picker</h1>
+    <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md text-center relative">
+        <!-- Settings Icon -->
+        <button id="settingsBtn" class="absolute top-4 right-4 text-gray-400 hover:text-blue-400 transition" title="Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        </button>
+
+        <h1 class="text-3xl font-bold mb-2 text-blue-400">🎬 Movie Picker</h1>
         <p class="text-gray-300 mb-6">What kind of movie do you want to watch?</p>
+
+        <!-- Mode Indicator -->
+        <div id="modeIndicator" class="mb-4 text-sm text-gray-400"></div>
 
         <!-- Input Section -->
         <div class="flex flex-col sm:flex-row gap-4 mb-6">
             <input type="text" id="genreInput" placeholder="Enter a genre (e.g., Sci-Fi, Comedy)" class="flex-grow p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button id="pickButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg transition duration-200">
+            <button id="pickButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                 Pick a Movie
             </button>
         </div>
 
         <!-- Result Section -->
-        <div id="result-container" class="bg-gray-700 p-6 rounded-lg min-h-[100px] flex items-center justify-center">
+        <div id="result-container" class="bg-gray-700 p-6 rounded-lg min-h-[100px] flex items-center justify-center mb-4">
             <span id="result-text" class="text-gray-400">Your recommendation will appear here...</span>
+        </div>
+
+        <!-- History Section -->
+        <div id="history-section" class="hidden">
+            <h3 class="text-sm font-semibold text-gray-400 mb-2">Recent Picks</h3>
+            <div id="history-list" class="text-sm text-left space-y-1 max-h-32 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
+            <h2 class="text-2xl font-bold mb-4 text-blue-400">Settings</h2>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Gemini API Key (Optional)</label>
+                <input type="password" id="apiKeyInput" placeholder="Enter your Gemini API key" class="w-full p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-400 mt-2">Get your free API key from <a href="https://aistudio.google.com/apikey" target="_blank" class="text-blue-400 hover:underline">Google AI Studio</a></p>
+            </div>
+
+            <div class="mb-4">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="useLocalFallback" class="mr-2">
+                    <span class="text-sm">Use local database as fallback</span>
+                </label>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="saveSettings" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                    Save
+                </button>
+                <button id="closeSettings" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                    Cancel
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
+        // Local movie database by genre
+        const movieDatabase = {
+            'sci-fi': [
+                'The Matrix (1999)', 'Blade Runner 2049 (2017)', 'Interstellar (2014)', 
+                'Inception (2010)', 'Arrival (2016)', 'Ex Machina (2014)', 
+                'The Martian (2015)', 'Dune (2021)', 'Her (2013)', 'District 9 (2009)'
+            ],
+            'comedy': [
+                'The Grand Budapest Hotel (2014)', 'Superbad (2007)', 'The Big Lebowski (1998)',
+                'Groundhog Day (1993)', 'Hot Fuzz (2007)', 'Airplane! (1980)',
+                'Monty Python and the Holy Grail (1975)', 'The Nice Guys (2016)', 'Bridesmaids (2011)', 'Borat (2006)'
+            ],
+            'action': [
+                'Mad Max: Fury Road (2015)', 'John Wick (2014)', 'Die Hard (1988)',
+                'The Dark Knight (2008)', 'Mission: Impossible - Fallout (2018)', 'Casino Royale (2006)',
+                'Terminator 2 (1991)', 'The Raid (2011)', 'Baby Driver (2017)', 'Edge of Tomorrow (2014)'
+            ],
+            'drama': [
+                'The Shawshank Redemption (1994)', 'Forrest Gump (1994)', 'The Godfather (1972)',
+                'Schindler\'s List (1993)', 'Good Will Hunting (1997)', 'A Beautiful Mind (2001)',
+                'The Pursuit of Happyness (2006)', 'Whiplash (2014)', 'Manchester by the Sea (2016)', '12 Years a Slave (2013)'
+            ],
+            'horror': [
+                'The Shining (1980)', 'Get Out (2017)', 'A Quiet Place (2018)',
+                'Hereditary (2018)', 'The Conjuring (2013)', 'It (2017)',
+                'The Witch (2015)', 'Midsommar (2019)', 'The Cabin in the Woods (2011)', '28 Days Later (2002)'
+            ],
+            'thriller': [
+                'Se7en (1995)', 'Gone Girl (2014)', 'Shutter Island (2010)',
+                'Prisoners (2013)', 'Zodiac (2007)', 'No Country for Old Men (2007)',
+                'The Silence of the Lambs (1991)', 'Parasite (2019)', 'Knives Out (2019)', 'The Prestige (2006)'
+            ],
+            'romance': [
+                'Eternal Sunshine of the Spotless Mind (2004)', 'La La Land (2016)', 'Before Sunrise (1995)',
+                'The Notebook (2004)', 'Pride and Prejudice (2005)', 'Casablanca (1942)',
+                'When Harry Met Sally (1989)', 'About Time (2013)', 'Call Me By Your Name (2017)', 'The Princess Bride (1987)'
+            ],
+            'fantasy': [
+                'The Lord of the Rings: The Fellowship of the Ring (2001)', 'Pan\'s Labyrinth (2006)', 'Spirited Away (2001)',
+                'Harry Potter and the Prisoner of Azkaban (2004)', 'The Princess Bride (1987)', 'Big Fish (2003)',
+                'Stardust (2007)', 'The Shape of Water (2017)', 'Howl\'s Moving Castle (2004)', 'Coraline (2009)'
+            ],
+            'animation': [
+                'Spider-Man: Into the Spider-Verse (2018)', 'WALL-E (2008)', 'Toy Story (1995)',
+                'Your Name (2016)', 'Up (2009)', 'Inside Out (2015)',
+                'The Lion King (1994)', 'Coco (2017)', 'Ratatouille (2007)', 'The Incredibles (2004)'
+            ],
+            'mystery': [
+                'Knives Out (2019)', 'The Usual Suspects (1995)', 'Memento (2000)',
+                'Shutter Island (2010)', 'Mystic River (2003)', 'Chinatown (1974)',
+                'Rear Window (1954)', 'Zodiac (2007)', 'Gone Baby Gone (2007)', 'The Game (1997)'
+            ]
+        };
+
+        // DOM elements
         const pickButton = document.getElementById('pickButton');
         const genreInput = document.getElementById('genreInput');
         const resultText = document.getElementById('result-text');
+        const modeIndicator = document.getElementById('modeIndicator');
+        const historySection = document.getElementById('history-section');
+        const historyList = document.getElementById('history-list');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettings = document.getElementById('closeSettings');
+        const saveSettings = document.getElementById('saveSettings');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const useLocalFallback = document.getElementById('useLocalFallback');
 
+        // State management
+        let apiKey = localStorage.getItem('geminiApiKey') || '';
+        let useFallback = localStorage.getItem('useLocalFallback') === 'true';
+        let history = JSON.parse(localStorage.getItem('movieHistory') || '[]');
+
+        // Initialize
+        updateModeIndicator();
+        loadHistory();
+        apiKeyInput.value = apiKey;
+        useLocalFallback.checked = useFallback;
+
+        // Event listeners
         pickButton.addEventListener('click', getMovieRecommendation);
         genreInput.addEventListener('keyup', (event) => {
             if (event.key === 'Enter') {
                 getMovieRecommendation();
             }
         });
+        settingsBtn.addEventListener('click', () => settingsModal.classList.add('active'));
+        closeSettings.addEventListener('click', () => settingsModal.classList.remove('active'));
+        saveSettings.addEventListener('click', saveSettingsHandler);
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) settingsModal.classList.remove('active');
+        });
+
+        function updateModeIndicator() {
+            if (apiKey) {
+                modeIndicator.innerHTML = '🤖 AI Mode: Using Gemini API';
+                modeIndicator.classList.add('text-green-400');
+            } else {
+                modeIndicator.innerHTML = '📚 Local Mode: Using curated database';
+                modeIndicator.classList.add('text-yellow-400');
+            }
+        }
+
+        function saveSettingsHandler() {
+            apiKey = apiKeyInput.value.trim();
+            useFallback = useLocalFallback.checked;
+            
+            localStorage.setItem('geminiApiKey', apiKey);
+            localStorage.setItem('useLocalFallback', useFallback);
+            
+            updateModeIndicator();
+            settingsModal.classList.remove('active');
+            
+            showNotification('Settings saved successfully!');
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg fade-in z-50';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function getLocalMovie(genre) {
+            const normalizedGenre = genre.toLowerCase().trim();
+            const movies = movieDatabase[normalizedGenre];
+            
+            if (movies && movies.length > 0) {
+                const randomIndex = Math.floor(Math.random() * movies.length);
+                return movies[randomIndex];
+            }
+            
+            // If exact genre not found, try partial match
+            for (const [key, value] of Object.entries(movieDatabase)) {
+                if (key.includes(normalizedGenre) || normalizedGenre.includes(key)) {
+                    const randomIndex = Math.floor(Math.random() * value.length);
+                    return value[randomIndex];
+                }
+            }
+            
+            return null;
+        }
+
+        function addToHistory(genre, movie) {
+            const entry = { genre, movie, timestamp: new Date().toISOString() };
+            history.unshift(entry);
+            history = history.slice(0, 10); // Keep only last 10
+            localStorage.setItem('movieHistory', JSON.stringify(history));
+            loadHistory();
+        }
+
+        function loadHistory() {
+            if (history.length === 0) {
+                historySection.classList.add('hidden');
+                return;
+            }
+            
+            historySection.classList.remove('hidden');
+            historyList.innerHTML = history.map(entry => 
+                `<div class="text-gray-400 p-2 bg-gray-800 rounded"><span class="text-blue-400">${entry.genre}:</span> ${entry.movie}</div>`
+            ).join('');
+        }
 
         async function getMovieRecommendation() {
             const genre = genreInput.value.trim();
             if (!genre) {
-                resultText.textContent = "Please enter a genre first!";
-                resultText.classList.add('text-yellow-400');
+                showError("Please enter a genre first!", 'warning');
                 return;
             }
 
             // --- Show Loading State ---
             resultText.innerHTML = '<div class="loader"></div>';
-            resultText.classList.remove('text-yellow-400', 'text-red-400', 'text-gray-400', 'text-xl', 'font-bold');
+            resultText.className = 'text-gray-400';
             pickButton.disabled = true;
-            pickButton.classList.add('opacity-50', 'cursor-not-allowed');
 
-            // --- Gemini API Call ---
+            // Try API first if key is available, otherwise use local
+            let movie = null;
+            let usedMethod = 'local';
+
+            if (apiKey) {
+                try {
+                    movie = await fetchFromAPI(genre);
+                    usedMethod = 'api';
+                } catch (error) {
+                    console.error('API error:', error);
+                    if (useFallback) {
+                        console.log('Falling back to local database');
+                        movie = getLocalMovie(genre);
+                    } else {
+                        throw error;
+                    }
+                }
+            } else {
+                movie = getLocalMovie(genre);
+            }
+
+            if (movie) {
+                displayMovie(movie);
+                addToHistory(genre, movie);
+            } else {
+                showError(`Sorry, I couldn't find any ${genre} movies. Try another genre!`, 'error');
+            }
+
+            pickButton.disabled = false;
+        }
+
+        async function fetchFromAPI(genre) {
             const systemPrompt = "Act as a movie buff. Based on the user's preferred genre, pick *one* great movie. Just return the movie title and its release year in the format: Movie Title (Year). For example: The Matrix (1999). Do not add any other text or markdown.";
             const userQuery = `Genre: ${genre}`;
-            const apiKey = ""; // Leave empty, handled by the environment
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
 
             const payload = {
                 contents: [{ parts: [{ text: userQuery }] }],
-                tools: [{ "google_search": {} }], // Use Google Search for grounded, real-time results
                 systemInstruction: {
                     parts: [{ text: systemPrompt }]
                 },
             };
 
-            try {
-                // Implement exponential backoff for retries
-                let response;
-                let delay = 1000; // Start with 1 second
-                for (let i = 0; i < 3; i++) { // Try up to 3 times
+            let response;
+            let delay = 1000;
+            
+            for (let i = 0; i < 3; i++) {
+                try {
                     response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
 
-                    if (response.status === 429 || response.status >= 500) {
-                        // If rate limited or server error, wait and retry
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        delay *= 2; // Double the delay
+                    if (response.status === 429) {
+                        throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+                    } else if (response.status === 401 || response.status === 403) {
+                        throw new Error('Invalid API key. Please check your settings.');
+                    } else if (response.status >= 500) {
+                        if (i < 2) {
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2;
+                            continue;
+                        }
+                        throw new Error('API service is temporarily unavailable.');
                     } else if (response.ok) {
-                        break; // Success, exit loop
+                        break;
                     } else {
-                        // Other client-side error, don't retry
-                        throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+                        throw new Error(`API request failed: ${response.statusText}`);
                     }
+                } catch (error) {
+                    if (i === 2 || error.message.includes('Invalid API key') || error.message.includes('Rate limit')) {
+                        throw error;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
                 }
-                
-                if (!response || !response.ok) {
-                   throw new Error(`API request failed after retries or with a non-retriable error.`);
-                }
-
-
-                const result = await response.json();
-                const candidate = result.candidates?.[0];
-
-                if (candidate && candidate.content?.parts?.[0]?.text) {
-                    const movie = candidate.content.parts[0].text;
-                    resultText.textContent = movie;
-                    resultText.classList.add('text-xl', 'font-bold', 'text-white');
-                } else {
-                    throw new Error("No valid movie recommendation found in the response.");
-                }
-
-            } catch (error) {
-                console.error("Error fetching movie recommendation:", error);
-                resultText.textContent = "Sorry, I couldn't pick a movie. Please try again.";
-                resultText.classList.add('text-red-400');
-            } finally {
-                // --- Reset Button State ---
-                pickButton.disabled = false;
-                pickButton.classList.remove('opacity-50', 'cursor-not-allowed');
             }
+
+            if (!response || !response.ok) {
+                throw new Error('Failed to get recommendation from API');
+            }
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                return candidate.content.parts[0].text.trim();
+            } else {
+                throw new Error('No valid movie recommendation in API response');
+            }
+        }
+
+        function displayMovie(movie) {
+            resultText.textContent = movie;
+            resultText.className = 'text-xl font-bold text-white fade-in';
+        }
+
+        function showError(message, type = 'error') {
+            resultText.textContent = message;
+            resultText.className = type === 'warning' ? 'text-yellow-400' : 'text-red-400';
         }
     </script>
 
